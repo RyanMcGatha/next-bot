@@ -3,21 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"node bot/discordBot.js\"",
+    "dev": "concurrently \"next dev\" \"nodemon bot/discordBot.js\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "frontend": "next dev",
+    "backend": "nodemon bot/discordBot.js"
   },
   "type": "module",
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
+    "@discordjs/ws": "^2.0.0",
+    "axios": "^1.7.7",
+    "bufferutil": "^4.0.8",
     "concurrently": "^9.0.1",
-    "discord.js": "^14.16.3",
-    "next": "14.2.15",
+    "discord.js": "^14.14.1",
+    "googleapis": "^144.0.0",
+    "next": "^14.2.15",
+    "nodemon": "^3.1.7",
     "openai": "^4.67.3",
+    "pg": "^8.13.0",
     "react": "^18",
     "react-dom": "^18",
-    "ws": "^8.5.0",
+    "utf-8-validate": "^6.0.3",
     "zlib-sync": "^0.1.9"
   },
   "devDependencies": {

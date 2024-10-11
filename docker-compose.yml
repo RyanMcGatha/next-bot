@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  nextjs-discord-bot:
+    build: .
+    container_name: nextjs-discord-bot
+    env_file:
+      - .env # Make sure your .env file contains the necessary environment variables
+    ports:
+      - "3000:3000" # Map Next.js frontend to port 3000
+    volumes:
+      - .:/app # Sync your local project files with the container
+      - /app/node_modules # Ensure node_modules are handled inside the container
+    depends_on:
+      - postgres_db
+    restart: always
+    command: npm run dev # This will run both frontend and Discord bot concurrently
+
+  postgres_db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nextjs-discord-bot
+    ports:
+      - "5432:5432" # Expose PostgreSQL on port 5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres-data:

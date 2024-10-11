@@ -22,11 +22,6 @@ client.on("messageCreate", async (message) => {
   // Ignore messages from the bot itself
   if (message.author.bot) return;
 
-  // Simple command to respond to "!ping"
-  if (message.content === "!ping") {
-    message.channel.send("Pong!");
-  }
-
   try {
     const reply = await getOpenAIResponse(message.content);
     await message.channel.send(reply);
@@ -38,9 +33,16 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// Log the bot in using the token from the .env file
-client.login(process.env.DISCORD_TOKEN).catch((error) => {
-  console.error("Error logging in: ", error);
+process.on("SIGINT", () => {
+  console.log("Shutting down bots...");
+  shutdownBots();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("Shutting down bots...");
+  shutdownBots();
+  process.exit(0);
 });
 
 // Generate bot invite link
