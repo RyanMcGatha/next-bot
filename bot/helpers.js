@@ -1,5 +1,5 @@
-import { Client, GatewayIntentBits, ChannelType } from "discord.js";
-import { pool } from "./db";
+import { ChannelType } from "discord.js";
+import pool from "./db";
 
 async function getUserByUsername(username) {
   const user = await pool.query("SELECT * FROM users WHERE username = $1", [
@@ -28,9 +28,15 @@ async function updateUser(user) {
 
 async function createBot(creatorId, prompt, name, inviteLink, discordToken) {
   try {
+    // Ensure that creatorId is a valid integer
+    const creatorIdInt = parseInt(creatorId, 10);
+    if (isNaN(creatorIdInt)) {
+      throw new Error("Invalid creator ID. Must be an integer.");
+    }
+
     const bot = await pool.query(
       "INSERT INTO bots (creator, prompt, name, invite_link, discord_token) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [creatorId, prompt, name, inviteLink, discordToken]
+      [creatorIdInt, prompt, name, inviteLink, discordToken]
     );
 
     if (bot.rows.length > 0) {
@@ -39,7 +45,7 @@ async function createBot(creatorId, prompt, name, inviteLink, discordToken) {
       // Insert the user-bot relationship into the user_bots table
       await pool.query(
         "INSERT INTO user_bots (user_id, bot_id) VALUES ($1, $2)",
-        [creatorId, botId]
+        [creatorIdInt, botId]
       );
 
       return bot.rows[0];

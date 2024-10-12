@@ -1,5 +1,5 @@
 // bot/discordBot.ts
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, PermissionFlagsBits } from "discord.js";
 import dotenv from "dotenv";
 import { getOpenAIResponse } from "./openAi.js";
 
@@ -46,15 +46,24 @@ process.on("SIGTERM", () => {
 });
 
 // Generate bot invite link
-export const getInviteLink = () => {
-  const clientId = "1293740227541598258";
-  console.log(clientId);
-  if (clientId) {
-    // Permissions can be customized as needed
-    const permissions = 8; // 8 stands for Administrator (all permissions)
-    return `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=${permissions}&scope=bot`;
+export const getInviteLink = async (token) => {
+  const loggedIn = await client.login(token);
+  if (!loggedIn) {
+    return "Failed to login";
   }
-  return null;
+  const inviteLink = await client.generateInvite({
+    scopes: ["bot"],
+    permissions: [
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.ManageMessages,
+      PermissionFlagsBits.ChangeNickname,
+      PermissionFlagsBits.EmbedLinks,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.ReadMessageHistory,
+    ],
+  });
+  return inviteLink;
 };
 
 export { client };

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDiscordBot } from "../../../bot/startBot"; // Assuming the utility you're using for bot creation.
-import { Client, GatewayIntentBits } from "discord.js";
 
 const activeBots = new Map(); // Move this outside the function if you want the Map to persist across multiple requests.
 
