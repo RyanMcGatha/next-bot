@@ -1,26 +1,21 @@
 "use client";
 import { useState } from "react";
-import axios from "axios";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 const Signin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await axios.post("/api/signin", {
-        username,
-        password,
-      });
-      if (response.status === 200) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        window.location.href = "/dashboard";
-      }
-    } catch (error) {
+      await login(username, password);
+      // login will handle setting the user and redirecting
+    } catch (err) {
       setError("Signin failed. Please try again.");
     }
   };

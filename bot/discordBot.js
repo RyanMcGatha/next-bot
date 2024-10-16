@@ -9,8 +9,22 @@ dotenv.config();
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildBans,
+    GatewayIntentBits.GuildEmojisAndStickers,
+    GatewayIntentBits.GuildIntegrations,
+    GatewayIntentBits.GuildWebhooks,
+    GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // Required to read message contents
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMessageTyping,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.DirectMessageReactions,
+    GatewayIntentBits.DirectMessageTyping,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildScheduledEvents,
   ],
 });
 
@@ -53,15 +67,7 @@ export const getInviteLink = async (token) => {
   }
   const inviteLink = await client.generateInvite({
     scopes: ["bot"],
-    permissions: [
-      PermissionFlagsBits.SendMessages,
-      PermissionFlagsBits.ViewChannel,
-      PermissionFlagsBits.ManageMessages,
-      PermissionFlagsBits.ChangeNickname,
-      PermissionFlagsBits.EmbedLinks,
-      PermissionFlagsBits.AttachFiles,
-      PermissionFlagsBits.ReadMessageHistory,
-    ],
+    permissions: [PermissionFlagsBits.Administrator],
   });
   return inviteLink;
 };

@@ -1,86 +1,96 @@
-"use client"; // Ensure this is a Client Component
+"use client";
 
-import { useState } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // To redirect users to /dashboard
 
-export default function InviteBot() {
-  const [inviteLink, setInviteLink] = useState("");
-  const [error, setError] = useState("");
+interface Error {
+  message: string;
+}
 
-  const handleGetInviteLink = async () => {
-    const res = await fetch("/api/inviteBot");
-    const data = await res.json();
+export default function HomePage() {
+  const { login, signup, logout, user } = useAuth(); // Add `signup` method from AuthContext
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [isExistingUser, setIsExistingUser] = useState(true); // Toggle between login/signup
+  const router = useRouter(); // For navigation
 
-    if (data.success) {
-      setInviteLink(data.inviteLink);
-      setError("");
-    } else {
-      setError("Failed to get the invite link.");
-      setInviteLink("");
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user]);
+
+  const handleLogin = async () => {
+    try {
+      await login(username, password);
+    } catch (error) {
+      if ((error as Error).message.includes("user-not-found")) {
+        setIsExistingUser(false); // Switch to sign-up mode if user not found
+      } else {
+        console.error("Failed to login:", error);
+      }
     }
   };
 
-  const handleStartBot = async () => {
-    const body = {
-      prompt: "your job is to schedule meetings",
-      name: "Bot",
-      discordToken:
-        "MTI4MTA4MzgzMTY3OTU4MjI5OA.G84gle.pjqU7DZewKty5wSmGe8iZmSzWtPsqhPfuH6gkU", // Ensure your token is correct
-    };
-
+  const handleSignup = async () => {
     try {
-      const res = await fetch("/api/startBot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Add this to ensure JSON is properly handled
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Error: ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log(data); // Handle the response data here
-      if (data.data.inviteLink) {
-        setInviteLink(data.data.inviteLink);
-      }
+      await signup(username, password);
+      router.push("/dashboard"); // Redirect to dashboard after sign-up
     } catch (error) {
-      console.error("Failed to start bot:", error); // Handle error if the request fails
+      console.error("Failed to sign up:", error);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <button
-        onClick={handleGetInviteLink}
-        className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Get Bot Invite Link
-      </button>
-      <button
-        onClick={handleStartBot}
-        className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Start Bot
-      </button>
-      {inviteLink && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600">
-            Invite the bot to your server using the following link:
+    <div className="flex flex-col items-center justify-center h-screen">
+      {user ? (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <p className="text-lg font-semibold mb-4">
+            Logged in as: {user.username}
           </p>
-          <a
-            href={inviteLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-600 hover:text-indigo-800"
+          <button
+            onClick={logout}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
           >
-            Invite Bot
-          </a>
+            Logout
+          </button>
         </div>
-      )}
-      {error && (
-        <p className="mt-4 text-center text-sm text-red-600">{error}</p>
+      ) : (
+        <div className="bg-white p-8 rounded-lg shadow-md w-80 text-black">
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            {isExistingUser ? "Login" : "Sign Up"}
+          </h2>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            className="w-full mb-4 px-3 py-2 border rounded text-black"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full mb-6 px-3 py-2 border rounded text-black"
+          />
+          <button
+            onClick={isExistingUser ? handleLogin : handleSignup}
+            className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            {isExistingUser ? "Login" : "Sign Up"}
+          </button>
+          <p
+            className="mt-4 text-center text-sm text-gray-600 cursor-pointer"
+            onClick={() => setIsExistingUser(!isExistingUser)}
+          >
+            {isExistingUser
+              ? "Don't have an account? Sign Up"
+              : "Already have an account? Login"}
+          </p>
+        </div>
       )}
     </div>
   );

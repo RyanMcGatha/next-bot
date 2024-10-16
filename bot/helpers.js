@@ -26,6 +26,11 @@ async function updateUser(user) {
   }
 }
 
+async function getBotById(id) {
+  const bot = await pool.query("SELECT * FROM bots WHERE id = $1", [id]);
+  return bot.rows[0];
+}
+
 async function createBot(creatorId, prompt, name, inviteLink, discordToken) {
   try {
     // Ensure that creatorId is a valid integer
@@ -160,6 +165,11 @@ async function updateBotStatus(botId, status) {
   }
 }
 
+async function getActiveBots() {
+  const bots = await pool.query("SELECT * FROM bots WHERE status = $1", [true]);
+  return bots.rows;
+}
+
 export {
   getUserByUsername,
   getUserById,
@@ -167,4 +177,6 @@ export {
   getUserBots,
   scanMessagesForKeywords,
   updateBotStatus,
+  getActiveBots,
+  getBotById,
 };

@@ -17,8 +17,7 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const [bots, setBots] = useState([]);
-
-  console.log(user);
+  console.log(bots);
 
   const Card = ({
     inviteLink,
@@ -103,7 +102,9 @@ const Dashboard = () => {
 
                 <button
                   className="absolute bottom-2 left-2 right-2 translate-y-full border-2 border-black bg-white px-4 py-2 text-black opacity-0 transition-all duration-300 ease-in-out group-hover:translate-y-0 group-hover:opacity-100"
-                  onClick={() => handleStartBot(title, subtitle, botToken)} // Passing values here
+                  onClick={() =>
+                    handleStartBot(botId, title, subtitle, botToken)
+                  } // Passing values here
                 >
                   Start Bot
                 </button>
@@ -198,6 +199,7 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`/api/user-bots?userId=${user.id}`);
       setBots(response.data.bots);
+      console.log(response.data.bots);
     } catch (err) {
       console.error("Failed to fetch user bots:", err);
       setError("Error retrieving user bots.");
@@ -241,8 +243,9 @@ const Dashboard = () => {
     }
   };
 
-  const handleStartBot = async (botName, botPrompt, botToken) => {
+  const handleStartBot = async (botId, botName, botPrompt, botToken) => {
     const body = {
+      botId: botId,
       prompt: botPrompt,
       name: botName,
       discordToken: botToken,

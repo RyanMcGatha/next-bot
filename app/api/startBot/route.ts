@@ -1,34 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDiscordBot } from "../../../bot/startBot"; // Assuming the utility you're using for bot creation.
-
-const activeBots = new Map(); // Move this outside the function if you want the Map to persist across multiple requests.
+import { startBot } from "../../../bot/startBot";
+import { updateBotStatus } from "../../../bot/helpers";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt, name, discordToken } = body;
+    const { botId, prompt, name, discordToken } = body;
 
     // Validate required fields
-    if (!prompt || !name || !discordToken) {
+    if (!botId || !prompt || !name || !discordToken) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Create the Discord bot
+    // Update bot status
     try {
-      const { client, inviteLink } = await createDiscordBot(
-        prompt,
-        name,
-        discordToken
+      await updateBotStatus(botId, true);
+    } catch (error) {
+      console.error("Error updating bot status:", error);
+      return NextResponse.json(
+        { error: "Failed to update bot status" },
+        { status: 500 }
       );
+    }
 
-      // Store the active bot client
-      activeBots.set(client.user!.id, client);
+    // Start the bot
+    try {
+      const { client, inviteLink } = await startBot(prompt, name, discordToken);
 
       return NextResponse.json(
-        { message: "Bot created", data: { inviteLink } },
+        {
+          message: "Bot created successfully",
+          data: { inviteLink, botName: client.user?.username },
+        },
         { status: 200 }
       );
     } catch (error) {
@@ -39,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Error parsing request:", error);
+    console.error("Error parsing request body:", error);
     return NextResponse.json(
       { error: "Invalid request body" },
       { status: 400 }

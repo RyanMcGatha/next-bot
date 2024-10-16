@@ -7,18 +7,33 @@ import {
   authenticate,
 } from "./googleCalenderServiece.js";
 
-async function createDiscordBot(prompt, botName, discordToken) {
+async function startBot(prompt, botName, discordToken) {
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMembers,
+      GatewayIntentBits.GuildBans,
+      GatewayIntentBits.GuildEmojisAndStickers,
+      GatewayIntentBits.GuildIntegrations,
+      GatewayIntentBits.GuildWebhooks,
+      GatewayIntentBits.GuildInvites,
+      GatewayIntentBits.GuildVoiceStates,
+      GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.GuildMessageTyping,
+      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.DirectMessageReactions,
+      GatewayIntentBits.DirectMessageTyping,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildScheduledEvents,
     ],
   });
+
   let isScheduling = false;
 
   client.once("ready", async () => {
-    console.log(`Bot created and logged in as ${client.user.tag}!`);
+    console.log(`Bot logged in as ${client.user.tag}!`);
     const guilds = client.guilds.cache.map((guild) => guild);
     for (const guild of guilds) {
       await ensurePermissions(client, guild);
@@ -43,6 +58,7 @@ async function createDiscordBot(prompt, botName, discordToken) {
         await message.reply(
           "Great! Let's schedule a meeting. Please provide the meeting summary."
         );
+
         const filter = (m) => m.author.id === message.author.id;
         const collector = message.channel.createMessageCollector({
           filter,
@@ -66,13 +82,12 @@ async function createDiscordBot(prompt, botName, discordToken) {
             const timeInput = m.content;
 
             try {
-              let prompt = `Convert the following time input to ISO 8601 format for both start and end times, if no year or month is provided, use the current year and month: "${timeInput}". Respond with two ISO 8601 formatted dates separated by a comma, representing the start and end times respectively. Only provide the formatted dates, nothing else.`;
+              let prompt = `Convert the following time input to ISO 8601 format for both start and end times: "${timeInput}".`;
               const aiResponse = await getOpenAIResponse(prompt, timeInput);
-              console.log(aiResponse);
-
               const [startTimeStr, endTimeStr] = aiResponse
                 .split(",")
                 .map((str) => str.trim());
+
               const startTime = new Date(startTimeStr);
               const endTime = new Date(endTimeStr);
 
@@ -80,34 +95,25 @@ async function createDiscordBot(prompt, botName, discordToken) {
                 throw new Error("Invalid date");
               }
 
-              try {
-                const eventDetails = {
-                  summary,
-                  start: startTime.toISOString(),
-                  end: endTime.toISOString(),
-                };
-                const result = await addEventToCalendar(eventDetails);
-                await m.reply(`Meeting scheduled successfully! ${result}`);
-              } catch (error) {
-                console.error("Error scheduling meeting:", error);
-                await m.reply(
-                  "An error occurred while scheduling the meeting. Please try again."
-                );
-              } finally {
-                isScheduling = false;
-              }
+              const eventDetails = {
+                summary,
+                start: startTime.toISOString(),
+                end: endTime.toISOString(),
+              };
+              const result = await addEventToCalendar(eventDetails);
+              await m.reply(`Meeting scheduled successfully! ${result}`);
             } catch (error) {
               console.log(error);
               await m.reply(
                 "I couldn't understand that time format. Please try again with the /book command."
               );
+            } finally {
               isScheduling = false;
             }
           });
         });
         return;
       } else {
-        // No token, start authentication process
         const authUrl = getAuthUrl();
         await message.reply(
           `Please authenticate with Google Calendar by visiting this URL: ${authUrl}`
@@ -116,7 +122,6 @@ async function createDiscordBot(prompt, botName, discordToken) {
       }
     }
 
-    // Only process messages with OpenAI if not scheduling an event
     if (!isScheduling) {
       try {
         const userMessage = message.content;
@@ -125,7 +130,7 @@ async function createDiscordBot(prompt, botName, discordToken) {
       } catch (error) {
         console.error("Error processing message with OpenAI:", error);
         await message.channel.send(
-          "I'm sorry, I encountered an error while processing your message. Please try again later."
+          "I'm sorry, I encountered an error. Please try again later."
         );
       }
     }
@@ -134,17 +139,10 @@ async function createDiscordBot(prompt, botName, discordToken) {
   await client.login(discordToken);
   const inviteLink = await client.generateInvite({
     scopes: ["bot"],
-    permissions: [
-      PermissionFlagsBits.SendMessages,
-      PermissionFlagsBits.ViewChannel,
-      PermissionFlagsBits.ManageMessages,
-      PermissionFlagsBits.ChangeNickname,
-      PermissionFlagsBits.EmbedLinks,
-      PermissionFlagsBits.AttachFiles,
-      PermissionFlagsBits.ReadMessageHistory,
-    ],
+    permissions: [PermissionFlagsBits.Administrator],
   });
 
+  // Ensure necessary permissions for the bot
   async function ensurePermissions(client, guild) {
     const requiredPermissions = [
       PermissionFlagsBits.SendMessages,
@@ -177,11 +175,10 @@ async function createDiscordBot(prompt, botName, discordToken) {
       try {
         const owner = await guild.fetchOwner();
         await owner.send(
-          `Hello! I'm missing some permissions in your server "${guild.name}". ` +
-            `Please grant me the following permissions to ensure I can function properly: ` +
-            `${permissionNames.join(
+          `I'm missing some permissions in your server "${guild.name}". ` +
+            `Please grant me the following permissions: ${permissionNames.join(
               ", "
-            )}. You can update my permissions in the server settings.`
+            )}.`
         );
       } catch (error) {
         console.error(
@@ -194,4 +191,4 @@ async function createDiscordBot(prompt, botName, discordToken) {
   return { client, inviteLink };
 }
 
-export { createDiscordBot };
+export { startBot };
